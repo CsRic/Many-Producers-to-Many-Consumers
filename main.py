@@ -40,10 +40,12 @@ def run_worker(rank, args):
 
     def run_maker(maker_time):
         global maker
-        maker = FakeExperienceMaker(produce_time=maker_time, 
-                                    data_shape=(4, 4), 
-                                    device= f'cuda:{torch.cuda.current_device()}'
-                                    )
+        maker = FakeExperienceMaker(
+            rank=rank,
+            produce_time=maker_time, 
+            data_shape=(4, 4), 
+            device= f'cuda:{rank}'
+            )
         print(f"maker at {rank}: start making")
         for _ in range(100):
             exp = maker.make_experience()
@@ -66,7 +68,8 @@ def run_worker(rank, args):
             )
         global trainer
         name = f"trainer at {rank}"
-        trainer = FakeTrainer(buffer, 
+        trainer = FakeTrainer(rank = rank,
+                              fake_experience_buffer = buffer, 
                               name=name, 
                               train_time=trainer_time, 
                               max_epoch=10)

@@ -16,10 +16,12 @@ class FakeExperience:
 
 class FakeExperienceMaker:
     def __init__(self,
+                 rank,
                  produce_time = 3.0,
                  void_model = None,
                  data_shape = (4,4),
                  device = 'cpu')->None:
+        self.rank = rank
         self.produce_time = produce_time
         self.void_model = void_model
         self.data_shape = data_shape
