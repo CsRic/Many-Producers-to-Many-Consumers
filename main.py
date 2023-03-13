@@ -40,7 +40,10 @@ def run_worker(rank, args):
 
     def run_maker(maker_time):
         global maker
-        maker = FakeExperienceMaker(produce_time=maker_time, data_shape=(4, 4))
+        maker = FakeExperienceMaker(produce_time=maker_time, 
+                                    data_shape=(4, 4), 
+                                    device= f'cuda:{torch.cuda.current_device()}'
+                                    )
         print(f"maker at {rank}: start making")
         for _ in range(100):
             exp = maker.make_experience()
@@ -54,14 +57,19 @@ def run_worker(rank, args):
                         if (min_buffer_length is None) or (buffer_length < min_buffer_length):
                             min_buffer_length = buffer_length
                             chosen_rank = i
-            print(f"                        maker at {rank}: make an exp to trainer at {chosen_rank}")
             rpc.remote(f"worker{chosen_rank}", put_experience, args=(exp,))
+            print(f"                        maker at {rank}: make an exp to trainer at {chosen_rank}")
 
     def run_trainer(trainer_time):
-        buffer = FakeExperienceBuffer()
+        buffer = FakeExperienceBuffer(
+            cpu_offload=True,
+            )
         global trainer
         name = f"trainer at {rank}"
-        trainer = FakeTrainer(buffer, name=name, train_time=trainer_time, max_epoch=10)
+        trainer = FakeTrainer(buffer, 
+                              name=name, 
+                              train_time=trainer_time, 
+                              max_epoch=10)
         print(f"{name}: start training")
         trainer.fit()
 

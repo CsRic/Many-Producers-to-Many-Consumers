@@ -10,7 +10,8 @@ class FakeTrainer(torch.nn.Module):
         self.name = name
 
     def run_step(self):
-        sample = self.buffer.sample().to_device(torch.device(f"cuda:{torch.cuda.current_device()}"))
+        sample = self.buffer.sample()
+        sample.to_device(torch.device(f"cuda:{torch.cuda.current_device()}"))
         # train...
         time.sleep(self.train_time)
     

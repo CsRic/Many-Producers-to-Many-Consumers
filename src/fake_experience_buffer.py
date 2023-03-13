@@ -28,8 +28,8 @@ class FakeExperienceBuffer(FakeExperienceBufferBase):
     def __init__(self, total_limit: int = 0, gpu_limit: int = 0, cpu_offload: bool = True) -> None:
         self.cpu_offload = cpu_offload
         self.total_limit = total_limit
-        self.gpu_limit = gpu_limit
-        self.target_device = torch.device(f'cuda:{torch.cuda.current_device()}')
+        # self.gpu_limit = gpu_limit
+        # self.target_device = torch.device(f'cuda:{torch.cuda.current_device()}')
         self.items = multiprocessing.Queue(total_limit)
 
     @torch.no_grad()
