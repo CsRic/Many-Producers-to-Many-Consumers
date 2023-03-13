@@ -8,13 +8,13 @@ class FakeTrainer(torch.nn.Module):
         self.train_time = train_time
         self.max_epoch = max_epoch
         self.name = name
+
     def run_step(self):
         sample = self.buffer.sample().to_device(torch.device(f"cuda:{torch.cuda.current_device()}"))
         # train...
         time.sleep(self.train_time)
     
     def fit(self):
-        print(f"{self.name}: start training")
         for i in range(self.max_epoch):
             self.run_step()
             print(f"{self.name}: trained {i + 1} / {self.max_epoch}")
