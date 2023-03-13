@@ -1,1 +1,1 @@
-python main.py --world_size 3 --maker_time 3.0 --trainer_time 1.0 --port 29604
+python main.py --world_size 5 --maker_time 3.0 --trainer_time 2.0 --port 29604

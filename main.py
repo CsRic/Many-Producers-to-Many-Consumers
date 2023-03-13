@@ -10,16 +10,12 @@ from src.fake_experience_maker import FakeExperienceMaker
 from src.fake_trainer import FakeTrainer
 from src.fake_experience_buffer import FakeExperienceBuffer
 
-# m = master, p = producer = exp maker, c = consumer = trainer
+# p = producer = exp maker, c = consumer = trainer
 rank_to_role = ['p', 'c', 'p', 'c', 'p', 'p', 'c', 'p']
 
-# maybe claiming instances here shares the remote handles
+# expose operations suit for Torch RPC style
 trainer: FakeTrainer = None
 maker: FakeExperienceMaker = None
-R = None
-
-# expose operations
-
 def get_buffer_length():
     global trainer
     if trainer:
@@ -33,11 +29,7 @@ def put_experience(exp: FakeExperienceBuffer):
 def run_worker(rank, args):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = args.port
-    options = rpc.TensorPipeRpcBackendOptions(num_worker_threads=32, rpc_timeout=0)
     world_size = args.world_size
-    global R
-    R = rank
-    
     trainer_ranks = []
     maker_ranks = []
     for i in range(world_size):
@@ -54,11 +46,10 @@ def run_worker(rank, args):
             exp = maker.make_experience()
             min_buffer_length = None
             chosen_rank = None
-            # choose a target buffer (of a trainer)
+            # choose a target buffer (of a trainer) that lacks exp the most
             while chosen_rank is None:
                 for i in trainer_ranks:
                     buffer_length = rpc.rpc_sync(f"worker{i}", get_buffer_length, args=None)
-                    # buffer_length = buffer_length.local_value()
                     if not (buffer_length is None):
                         if (min_buffer_length is None) or (buffer_length < min_buffer_length):
                             min_buffer_length = buffer_length
@@ -70,11 +61,12 @@ def run_worker(rank, args):
         buffer = FakeExperienceBuffer()
         global trainer
         name = f"trainer at {rank}"
-        trainer = FakeTrainer(buffer, name=name, train_time=trainer_time)
+        trainer = FakeTrainer(buffer, name=name, train_time=trainer_time, max_epoch=10)
         print(f"{name}: start training")
         trainer.fit()
 
     # run
+    options = rpc.TensorPipeRpcBackendOptions(num_worker_threads=32, rpc_timeout=0)
     for i in range(args.world_size):
         if i == rank:
             continue
@@ -91,7 +83,6 @@ def run_worker(rank, args):
         run_maker(args.maker_time)
     elif rank_to_role[rank] == 'c':
         run_trainer(args.trainer_time)
-    
     rpc.shutdown()
 
 if __name__ == "__main__":
